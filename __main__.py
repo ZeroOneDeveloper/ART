@@ -50,10 +50,10 @@ async def on_ready():
 @client.tree.command(name="작가신청", description="자신의 작품을 올릴 수 있는 작가채널을 신청합니다.")
 @app_commands.rename(channelName="작가채널_이름")
 @app_commands.describe(channelName="자신의 채널의 이름을 정합니다.")
-async def writerApply(interaction: Interaction, channelName: str) -> None:
+async def writerApply(interaction: Interaction, channelName: str):
     await interaction.response.defer()
 
-    if await database["users"].find_one({"_id": str(interaction.user.id)}):
+    if await database["channel"].find_one({"authors": {"$in": [str(interaction.user.id)]}}):
         await interaction.edit_original_response(
             embed=Embed(
                 title="⚠️ Warning",
@@ -101,10 +101,10 @@ async def writerApply(interaction: Interaction, channelName: str) -> None:
                 overwrites=overwrites,
             )
 
-            await database["users"].insert_one(
+            await database["channel"].insert_one(
                 {
-                    "_id": str(interaction.user.id),
-                    "channel": str(writerChannel.id),
+                    "_id": str(writerChannel.id),
+                    "authors": [str(interaction.user.id)],
                     "joinedAt": datetime.now(tz=timezone("Asia/Seoul")).strftime(
                         "%Y-%m-%d %H:%M:%S"
                     ),
@@ -212,6 +212,66 @@ async def tracker(interaction: Interaction) -> None:
             title="작가채널 트래커",
             description=f"추적 채널 : {channelCount}개\n조치 필요 채널 : {len(trackedChannels)}개\n\n{inNeedOfActionChannel}",
             color=Color.red(),
+        )
+    )
+    return
+
+
+@client.tree.command(name="새로고침", description="( VJ ONLY ) 작가채널을 데이터베이스에 새로고침합니다.")
+async def refresh(interaction: Interaction) -> None:
+    if not (
+        utils.get(interaction.guild.roles, id=int(os.getenv("VJ")))
+        in interaction.user.roles
+    ):
+        await interaction.response.send_message(
+            embed=Embed(
+                title="⚠️ Warning",
+                description=f'이 명령어는 <@&{os.getenv("VJ")}>만 사용할 수 있습니다.',
+                color=Color.red(),
+            ),
+            ephemeral=True,
+        )
+        return
+    await interaction.response.defer()
+    abnormalChannels: List[TextChannel] = []
+    for category in list(
+        filter(lambda x: x.name == "🎨【 작가채널 】", interaction.guild.categories)
+    ):
+        for channel in category.channels:
+            if str(channel.topic) == '':
+                if (
+                    await database["channel"].find_one({"channel": str(channel.id)})
+                    is None
+                ):
+                    if channel.name.endswith("작가"):
+                        abnormalChannels.append(channel)
+                    continue
+            if await database["channel"].find_one({"_id": str(channel.id)}) is None:
+                await database["channel"].insert_one(
+                    {
+                        "_id": str(channel.id),
+                        "authors": [str(channel.topic)],
+                        "joinedAt": channel.created_at.replace(
+                            tzinfo=timezone("Asia/Seoul")
+                        ).strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                )
+                await channel.edit(topic='')
+    if len(abnormalChannels) != 0:
+        await interaction.edit_original_response(
+            embed=Embed(
+                title="작가채널 새로고침",
+                description=f"정상적으로 작가채널을 새로고침 하였습니다.\n하지만, **{len(abnormalChannels)}** 개의 채널이\n"
+                            f"비정상적으로 작동하고 있습니다.\n\n{', '.join([channel.mention for channel in abnormalChannels])}",
+                color=Color.red(),
+            )
+        )
+        return
+    await interaction.edit_original_response(
+        embed=Embed(
+            title="작가채널 새로고침",
+            description="작가채널들을 데이터베이스에\n새로고침 하였습니다.",
+            color=Color.green(),
         )
     )
     return
