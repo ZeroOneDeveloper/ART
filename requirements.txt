@@ -1,3 +1,6 @@
 discord
 python-dotenv
 pytz
+pymongo
+motor
+pymongo[srv]
