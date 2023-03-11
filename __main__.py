@@ -218,7 +218,7 @@ async def warn(interaction: Interaction, channel: TextChannel):
         embed=Embed(
             title="⚠️ 경고",
             description="장기간 미활동으로 24시간 후 채널 삭제합니다!\n그림 올리시면 보존되니 참고 바랍니다!\n"
-            "`이 뒤로는 적어도 14일에 한번씩은 활동 부탁드려요!`",
+            "`이 뒤로는 적어도 7일에 한번씩은 활동 부탁드려요!`",
             color=Color.red(),
         ),
     )
