@@ -10,6 +10,7 @@ from discord import (
     ButtonStyle,
     Interaction,
     app_commands,
+    InteractionType,
     PermissionOverwrite,
 )
 
@@ -45,6 +46,32 @@ client = MyClient()
 @client.event
 async def on_ready():
     print(f"{str(client.user)} is ready.")
+
+
+@client.event
+async def on_interaction(interaction: Interaction):
+    if interaction.message.id == int(os.getenv("PUBLIC_MESSAGE_ID")) and interaction.type == InteractionType.component:
+        if utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER"))) in interaction.user.roles:
+            await interaction.response.send_message(
+                embed=Embed(
+                    title="⚠️ Warning",
+                    description="이미 시청자 역할을 받으셨습니다.",
+                    color=Color.red(),
+                ),
+                ephemeral=True,
+            )
+            return
+        await interaction.user.add_roles(
+            utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER"))),
+        )
+        await interaction.response.send_message(
+            embed=Embed(
+                title="✅ Success",
+                description="정상적으로 시청자 역할이 추가되었습니다.",
+                color=Color.green(),
+            ),
+            ephemeral=True,
+        )
 
 
 @client.tree.command(name="작가신청", description="자신의 작품을 올릴 수 있는 작가채널을 신청합니다.")
@@ -245,7 +272,7 @@ async def refresh(interaction: Interaction) -> None:
                 ):
                     if channel.name.endswith("작가"):
                         abnormalChannels.append(channel)
-                    continue
+                continue
             if await database["channel"].find_one({"_id": str(channel.id)}) is None:
                 await database["channel"].insert_one(
                     {
