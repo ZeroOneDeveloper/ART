@@ -1,5 +1,6 @@
 from discord import (
     ui,
+    User,
     utils,
     Color,
     Embed,
@@ -18,7 +19,7 @@ import os
 import asyncio
 from pytz import timezone
 from dotenv import load_dotenv
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from datetime import datetime, timedelta
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -50,8 +51,14 @@ async def on_ready():
 
 @client.event
 async def on_interaction(interaction: Interaction):
-    if interaction.message.id == int(os.getenv("PUBLIC_MESSAGE_ID")) and interaction.type == InteractionType.component:
-        if utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER"))) in interaction.user.roles:
+    if (
+        interaction.message.id == int(os.getenv("PUBLIC_MESSAGE_ID"))
+        and interaction.type == InteractionType.component
+    ):
+        if (
+            utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER")))
+            in interaction.user.roles
+        ):
             await interaction.response.send_message(
                 embed=Embed(
                     title="⚠️ Warning",
@@ -80,7 +87,9 @@ async def on_interaction(interaction: Interaction):
 async def writerApply(interaction: Interaction, channelName: str):
     await interaction.response.defer()
 
-    if await database["channel"].find_one({"authors": {"$in": [str(interaction.user.id)]}}):
+    if await database["channel"].find_one(
+        {"authors": {"$in": [str(interaction.user.id)]}}
+    ):
         await interaction.edit_original_response(
             embed=Embed(
                 title="⚠️ Warning",
@@ -190,6 +199,57 @@ async def writerApply(interaction: Interaction, channelName: str):
         view.timeout -= 1
 
 
+@client.tree.command(name="경고", description="( VJ ONLY ) 경고를 부여합니다.")
+@app_commands.describe(channels="경고를 부여할 채널을 선택합니다.")
+async def warn(interaction: Interaction, users: List[User]):
+    if not utils.get(interaction.user.roles, id=int(os.getenv("VJ"))):
+        await interaction.response.send_message(
+            embed=Embed(
+                title="⚠️ Warning",
+                description="권한이 없습니다.",
+                color=Color.red(),
+            ),
+            ephemeral=True,
+        )
+        return
+    await interaction.response.defer()
+    channels: List[TextChannel] = []
+    abnormalUsers: List[User] = []
+    for user in users:
+        findUser = await database["channel"].find_one({"authors": {"$in": [str(user.id)]}})
+        if not findUser:
+            abnormalUsers.append(user)
+            continue
+        channels.append(utils.get(interaction.guild.text_channels, id=int(findUser["_id"])))
+    for channel in channels:
+        channelData = await database["channel"].find_one({"_id": str(channel.id)})
+        await channel.send(
+            content=f"<@{channelData['authors'][0]}>",
+            embed=Embed(
+                title="⚠️ 경고",
+                description="장기간 미활동으로 24시간 후 채널 삭제합니다!\n그림 올리시면 보존되니 참고 바랍니다!\n"
+                "`이 뒤로는 적어도 14일에 한번씩은 활동 부탁드려요!`",
+            ),
+        )
+    if abnormalUsers:
+        await interaction.edit_original_response(
+            embed=Embed(
+                title="⚠️ Warning",
+                description=f"비정상적인 유저\n{', '.join([user.mention for user in abnormalUsers])}",
+                color=Color.red(),
+            )
+        )
+        return
+    await interaction.edit_original_response(
+        embed=Embed(
+            title="경고",
+            description=f"정상적으로 경고를 부여했습니다.",
+            color=Color.green(),
+        )
+    )
+    return
+
+
 @client.tree.command(
     name="트래커", description="( VJ ONLY ) 작가채널의 마지막 메시지가 7일 이상 지났는지 확인합니다."
 )
@@ -208,7 +268,7 @@ async def tracker(interaction: Interaction) -> None:
         )
         return
     await interaction.response.defer()
-    trackedChannels: List[Tuple[TextChannel, datetime]] = []
+    trackedChannels: List[Tuple[TextChannel, datetime, int]] = []
     channelCount = 0
     for category in list(
         filter(lambda x: x.name == "🎨【 작가채널 】", interaction.guild.categories)
@@ -227,11 +287,11 @@ async def tracker(interaction: Interaction) -> None:
             if (lastSendTime + timedelta(days=7)) < datetime.now(
                 tz=timezone("Asia/Seoul")
             ):
-                trackedChannels.append((channel, lastSendTime))
+                trackedChannels.append((channel, lastSendTime, messages[0].author.id))
     inNeedOfActionChannel = "\n".join(
         [
-            f"{channel.mention} : {datetime.now(tz=timezone('Asia/Seoul')) - lastSendTime}"
-            for channel, lastSendTime in trackedChannels
+            f"{channel.mention} (<@{authorId}>) : {datetime.now(tz=timezone('Asia/Seoul')) - lastSendTime}"
+            for channel, lastSendTime, authorId in trackedChannels
         ]
     )
     await interaction.edit_original_response(
@@ -265,7 +325,7 @@ async def refresh(interaction: Interaction) -> None:
         filter(lambda x: x.name == "🎨【 작가채널 】", interaction.guild.categories)
     ):
         for channel in category.channels:
-            if str(channel.topic) == '':
+            if str(channel.topic) == "":
                 if (
                     await database["channel"].find_one({"channel": str(channel.id)})
                     is None
@@ -283,13 +343,13 @@ async def refresh(interaction: Interaction) -> None:
                         ).strftime("%Y-%m-%d %H:%M:%S"),
                     }
                 )
-                await channel.edit(topic='')
+                await channel.edit(topic="")
     if len(abnormalChannels) != 0:
         await interaction.edit_original_response(
             embed=Embed(
                 title="작가채널 새로고침",
                 description=f"정상적으로 작가채널을 새로고침 하였습니다.\n하지만, **{len(abnormalChannels)}** 개의 채널이\n"
-                            f"비정상적으로 작동하고 있습니다.\n\n{', '.join([channel.mention for channel in abnormalChannels])}",
+                f"비정상적으로 작동하고 있습니다.\n\n{', '.join([channel.mention for channel in abnormalChannels])}",
                 color=Color.red(),
             )
         )
