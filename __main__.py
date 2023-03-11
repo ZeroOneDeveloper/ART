@@ -250,6 +250,50 @@ async def warn(interaction: Interaction, users: List[User]):
     return
 
 
+@client.tree.command(name="삭제", description="( VJ ONLY ) 작가채널을 삭제합니다.")
+@app_commands.describe(channels="삭제할 채널을 선택합니다.")
+async def deleteWriterChannel(interaction: Interaction, users: List[User]):
+    if not utils.get(interaction.user.roles, id=int(os.getenv("VJ"))):
+        await interaction.response.send_message(
+            embed=Embed(
+                title="⚠️ Warning",
+                description="권한이 없습니다.",
+                color=Color.red(),
+            ),
+            ephemeral=True,
+        )
+        return
+    await interaction.response.defer()
+    channels: List[TextChannel] = []
+    abnormalUsers: List[User] = []
+    for user in users:
+        findUser = await database["channel"].find_one({"authors": {"$in": [str(user.id)]}})
+        if not findUser:
+            abnormalUsers.append(user)
+            continue
+        channels.append(utils.get(interaction.guild.text_channels, id=int(findUser["_id"])))
+    for channel in channels:
+        await channel.delete()
+        await database["channel"].delete_one({"_id": str(channel.id)})
+    if abnormalUsers:
+        await interaction.edit_original_response(
+            embed=Embed(
+                title="⚠️ Warning",
+                description=f"비정상적인 유저\n{', '.join([user.mention for user in abnormalUsers])}",
+                color=Color.red(),
+            )
+        )
+        return
+    await interaction.edit_original_response(
+        embed=Embed(
+            title="삭제",
+            description=f"정상적으로 삭제했습니다.",
+            color=Color.green(),
+        )
+    )
+    return
+
+
 @client.tree.command(
     name="트래커", description="( VJ ONLY ) 작가채널의 마지막 메시지가 7일 이상 지났는지 확인합니다."
 )
