@@ -6,6 +6,7 @@ from discord import (
     Embed,
     Client,
     Object,
+    Member,
     Intents,
     TextChannel,
     ButtonStyle,
@@ -51,34 +52,32 @@ async def on_ready():
 
 @client.event
 async def on_interaction(interaction: Interaction):
-    if (
-        interaction.message.id == int(os.getenv("PUBLIC_MESSAGE_ID"))
-        and interaction.type == InteractionType.component
-    ):
-        if (
-            utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER")))
-            in interaction.user.roles
-        ):
+    if interaction.type == InteractionType.component:
+        if interaction.message.id == int(os.getenv("PUBLIC_MESSAGE_ID")):
+            if (
+                utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER")))
+                in interaction.user.roles
+            ):
+                await interaction.response.send_message(
+                    embed=Embed(
+                        title="⚠️ Warning",
+                        description="이미 시청자 역할을 받으셨습니다.",
+                        color=Color.red(),
+                    ),
+                    ephemeral=True,
+                )
+                return
+            await interaction.user.add_roles(
+                utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER"))),
+            )
             await interaction.response.send_message(
                 embed=Embed(
-                    title="⚠️ Warning",
-                    description="이미 시청자 역할을 받으셨습니다.",
-                    color=Color.red(),
+                    title="✅ Success",
+                    description="정상적으로 시청자 역할이 추가되었습니다.",
+                    color=Color.green(),
                 ),
                 ephemeral=True,
             )
-            return
-        await interaction.user.add_roles(
-            utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER"))),
-        )
-        await interaction.response.send_message(
-            embed=Embed(
-                title="✅ Success",
-                description="정상적으로 시청자 역할이 추가되었습니다.",
-                color=Color.green(),
-            ),
-            ephemeral=True,
-        )
 
 
 @client.tree.command(name="작가신청", description="자신의 작품을 올릴 수 있는 작가채널을 신청합니다.")
@@ -200,8 +199,9 @@ async def writerApply(interaction: Interaction, channelName: str):
 
 
 @client.tree.command(name="경고", description="( VJ ONLY ) 경고를 부여합니다.")
-@app_commands.describe(channels="경고를 부여할 채널을 선택합니다.")
-async def warn(interaction: Interaction, users: List[User]):
+@app_commands.describe(channel="경고를 부여할 채널을 선택합니다.")
+@app_commands.rename(channel="작가채널")
+async def warn(interaction: Interaction, channel: TextChannel):
     if not utils.get(interaction.user.roles, id=int(os.getenv("VJ"))):
         await interaction.response.send_message(
             embed=Embed(
@@ -212,35 +212,17 @@ async def warn(interaction: Interaction, users: List[User]):
             ephemeral=True,
         )
         return
-    await interaction.response.defer()
-    channels: List[TextChannel] = []
-    abnormalUsers: List[User] = []
-    for user in users:
-        findUser = await database["channel"].find_one({"authors": {"$in": [str(user.id)]}})
-        if not findUser:
-            abnormalUsers.append(user)
-            continue
-        channels.append(utils.get(interaction.guild.text_channels, id=int(findUser["_id"])))
-    for channel in channels:
-        channelData = await database["channel"].find_one({"_id": str(channel.id)})
-        await channel.send(
-            content=f"<@{channelData['authors'][0]}>",
-            embed=Embed(
-                title="⚠️ 경고",
-                description="장기간 미활동으로 24시간 후 채널 삭제합니다!\n그림 올리시면 보존되니 참고 바랍니다!\n"
-                "`이 뒤로는 적어도 14일에 한번씩은 활동 부탁드려요!`",
-            ),
-        )
-    if abnormalUsers:
-        await interaction.edit_original_response(
-            embed=Embed(
-                title="⚠️ Warning",
-                description=f"비정상적인 유저\n{', '.join([user.mention for user in abnormalUsers])}",
-                color=Color.red(),
-            )
-        )
-        return
-    await interaction.edit_original_response(
+    findData = await database["channel"].find_one({"_id": str(channel.id)})
+    await channel.send(
+        content=f"<@{findData['authors'][0]}>",
+        embed=Embed(
+            title="⚠️ 경고",
+            description="장기간 미활동으로 24시간 후 채널 삭제합니다!\n그림 올리시면 보존되니 참고 바랍니다!\n"
+            "`이 뒤로는 적어도 14일에 한번씩은 활동 부탁드려요!`",
+            color=Color.red(),
+        ),
+    )
+    await interaction.response.send_message(
         embed=Embed(
             title="경고",
             description=f"정상적으로 경고를 부여했습니다.",
@@ -251,8 +233,9 @@ async def warn(interaction: Interaction, users: List[User]):
 
 
 @client.tree.command(name="삭제", description="( VJ ONLY ) 작가채널을 삭제합니다.")
-@app_commands.describe(channels="삭제할 채널을 선택합니다.")
-async def deleteWriterChannel(interaction: Interaction, users: List[User]):
+@app_commands.describe(channel="삭제할 채널을 선택합니다.")
+@app_commands.rename(channel="작가채널")
+async def deleteWriterChannel(interaction: Interaction, channel: TextChannel):
     if not utils.get(interaction.user.roles, id=int(os.getenv("VJ"))):
         await interaction.response.send_message(
             embed=Embed(
@@ -263,28 +246,12 @@ async def deleteWriterChannel(interaction: Interaction, users: List[User]):
             ephemeral=True,
         )
         return
-    await interaction.response.defer()
-    channels: List[TextChannel] = []
-    abnormalUsers: List[User] = []
-    for user in users:
-        findUser = await database["channel"].find_one({"authors": {"$in": [str(user.id)]}})
-        if not findUser:
-            abnormalUsers.append(user)
-            continue
-        channels.append(utils.get(interaction.guild.text_channels, id=int(findUser["_id"])))
-    for channel in channels:
-        await channel.delete()
-        await database["channel"].delete_one({"_id": str(channel.id)})
-    if abnormalUsers:
-        await interaction.edit_original_response(
-            embed=Embed(
-                title="⚠️ Warning",
-                description=f"비정상적인 유저\n{', '.join([user.mention for user in abnormalUsers])}",
-                color=Color.red(),
-            )
-        )
-        return
-    await interaction.edit_original_response(
+    await channel.delete()
+    findData = await database["channel"].find_one({"_id": str(channel.id)})
+    await database["channel"].delete_one({"_id": str(channel.id)})
+    member = utils.get(interaction.guild.members, id=int(findData["authors"][0]))
+    await member.remove_roles(utils.get(interaction.guild.roles, id=int(os.getenv("WRITER"))))
+    await interaction.response.send_message(
         embed=Embed(
             title="삭제",
             description=f"정상적으로 삭제했습니다.",
@@ -318,6 +285,8 @@ async def tracker(interaction: Interaction) -> None:
         filter(lambda x: x.name == "🎨【 작가채널 】", interaction.guild.categories)
     ):
         for channel in category.channels:
+            if not channel.name.endswith("작가"):
+                continue
             channelCount += 1
             messages = [message async for message in channel.history(limit=1)]
             if len(messages) == 0:
