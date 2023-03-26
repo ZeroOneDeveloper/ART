@@ -51,6 +51,13 @@ async def on_ready():
 
 
 @client.event
+async def on_member_join(member: Member):
+    await member.add_roles(
+        utils.get(member.guild.roles, id=int(os.getenv("VIEWER"))),
+    )
+
+
+@client.event
 async def on_interaction(interaction: Interaction):
     if interaction.type == InteractionType.component:
         if interaction.message.id == int(os.getenv("PUBLIC_MESSAGE_ID")):
@@ -80,7 +87,7 @@ async def on_interaction(interaction: Interaction):
             )
 
 
-@client.tree.command(name="작가신청", description="자신의 작품을 올릴 수 있는 작가채널을 신청합니다.")
+@client.tree.command(name="작가ㅈ신청", description="자신의 작품을 올릴 수 있는 작가채널을 신청합니다.")
 @app_commands.rename(channelName="작가채널_이름")
 @app_commands.describe(channelName="자신의 채널의 이름을 정합니다.")
 async def writerApply(interaction: Interaction, channelName: str):
@@ -144,6 +151,13 @@ async def writerApply(interaction: Interaction, channelName: str):
                         "%Y-%m-%d %H:%M:%S"
                     ),
                 }
+            )
+
+            await interaction.user.add_roles(
+                utils.get(interaction.guild.roles, id=int(os.getenv("WRITER"))),
+            )
+            await interaction.user.remove_roles(
+                utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER"))),
             )
 
             await _interaction.response.send_message(
