@@ -325,9 +325,9 @@ async def tracker(interaction: Interaction) -> None:
                         (
                             channel,
                             lastSendTime,
-                            await database["channel"].find_one(
+                            (await database["channel"].find_one(
                                 {"_id": str(channel.id)}
-                            )["authors"][0],
+                            ))["authors"][0],
                         )
                     )
     inNeedOfActionChannel = "\n".join(
