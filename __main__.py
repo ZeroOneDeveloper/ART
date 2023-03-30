@@ -264,7 +264,9 @@ async def deleteWriterChannel(interaction: Interaction, channel: TextChannel):
     findData = await database["channel"].find_one({"_id": str(channel.id)})
     await database["channel"].delete_one({"_id": str(channel.id)})
     member = utils.get(interaction.guild.members, id=int(findData["authors"][0]))
-    await member.remove_roles(utils.get(interaction.guild.roles, id=int(os.getenv("WRITER"))))
+    await member.remove_roles(
+        utils.get(interaction.guild.roles, id=int(os.getenv("WRITER")))
+    )
     await interaction.response.send_message(
         embed=Embed(
             title="삭제",
@@ -314,7 +316,20 @@ async def tracker(interaction: Interaction) -> None:
             if (lastSendTime + timedelta(days=7)) < datetime.now(
                 tz=timezone("Asia/Seoul")
             ):
-                trackedChannels.append((channel, lastSendTime, messages[0].author.id))
+                try:
+                    trackedChannels.append(
+                        (channel, lastSendTime, messages[0].author.id)
+                    )
+                except IndexError:
+                    trackedChannels.append(
+                        (
+                            channel,
+                            lastSendTime,
+                            await database["channel"].find_one(
+                                {"_id": str(channel.id)}
+                            )["authors"][0],
+                        )
+                    )
     inNeedOfActionChannel = "\n".join(
         [
             f"{channel.mention} (<@{authorId}>) : {datetime.now(tz=timezone('Asia/Seoul')) - lastSendTime}"
