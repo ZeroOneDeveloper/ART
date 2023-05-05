@@ -62,8 +62,8 @@ async def on_interaction(interaction: Interaction):
     if interaction.type == InteractionType.component:
         if interaction.message.id == int(os.getenv("PUBLIC_MESSAGE_ID")):
             if (
-                    utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER")))
-                    in interaction.user.roles
+                utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER")))
+                in interaction.user.roles
             ):
                 await interaction.response.send_message(
                     embed=Embed(
@@ -94,7 +94,7 @@ async def writerApply(interaction: Interaction, channelName: str):
     await interaction.response.defer()
 
     if await database["channel"].find_one(
-            {"authors": {"$in": [str(interaction.user.id)]}}
+        {"authors": {"$in": [str(interaction.user.id)]}}
     ):
         await interaction.edit_original_response(
             embed=Embed(
@@ -234,7 +234,7 @@ async def warn(interaction: Interaction, channel: TextChannel):
         embed=Embed(
             title="⚠️ 경고",
             description="장기간 미활동으로 24시간 후 채널 삭제합니다!\n그림 올리시면 보존되니 참고 바랍니다!\n"
-                        "`이 뒤로는 적어도 7일에 한번씩은 활동 부탁드려요!`",
+            "`이 뒤로는 적어도 14일에 한번씩은 활동 부탁드려요!`",
             color=Color.red(),
         ),
     )
@@ -272,10 +272,26 @@ async def deleteWriterChannel(interaction: Interaction, channel: TextChannel):
         @ui.button(label="확인", style=ButtonStyle.green, emoji="✅")
         async def confirm(self, _interaction: Interaction, button: ui.Button):
             self.value = True
+            await _interaction.response.send_message(
+                embed=Embed(
+                    title="⚠️ Warning",
+                    description="삭제중입니다...",
+                    color=Color.orange(),
+                ),
+                ephemeral=True,
+            )
 
         @ui.button(label="거부", style=ButtonStyle.red, emoji="⛔")
         async def cancel(self, _interaction: Interaction, button: ui.Button):
             self.value = False
+            await _interaction.response.send_message(
+                embed=Embed(
+                    title="⚠️ Warning",
+                    description="삭제를 취소했습니다.",
+                    color=Color.red(),
+                ),
+                ephemeral=True,
+            )
 
     view = Confirm()
     await interaction.response.send_message(
@@ -302,8 +318,15 @@ async def deleteWriterChannel(interaction: Interaction, channel: TextChannel):
             await channel.delete()
             findData = await database["channel"].find_one({"_id": str(channel.id)})
             await database["channel"].delete_one({"_id": str(channel.id)})
-            member = utils.get(interaction.guild.members, id=int(findData["authors"][0]))
-            for role in [int(os.getenv("WRITER")), 982907252103086191, 982907265101201408, 982907268389535745]:
+            member = utils.get(
+                interaction.guild.members, id=int(findData["authors"][0])
+            )
+            for role in [
+                int(os.getenv("WRITER")),
+                982907252103086191,
+                982907265101201408,
+                982907268389535745,
+            ]:
                 await member.remove_roles(
                     utils.get(interaction.guild.roles, id=int(role))
                 )
@@ -315,7 +338,8 @@ async def deleteWriterChannel(interaction: Interaction, channel: TextChannel):
                     title="✅ Success",
                     description=f"정상적으로 삭제했습니다.",
                     color=Color.green(),
-                )
+                ),
+                view=None,
             )
             return
         elif view.value is not None and view.value is False:
@@ -324,18 +348,19 @@ async def deleteWriterChannel(interaction: Interaction, channel: TextChannel):
                     title="⚠️ Warning",
                     description="삭제를 취소했습니다.",
                     color=Color.red(),
-                )
+                ),
+                view=None,
             )
             return
 
 
 @client.tree.command(
-    name="트래커", description="( VJ ONLY ) 작가채널의 마지막 메시지가 7일 이상 지났는지 확인합니다."
+    name="트래커", description="( VJ ONLY ) 작가채널의 마지막 메시지가 14일 이상 지났는지 확인합니다."
 )
 async def tracker(interaction: Interaction) -> None:
     if not (
-            utils.get(interaction.guild.roles, id=int(os.getenv("VJ")))
-            in interaction.user.roles
+        utils.get(interaction.guild.roles, id=int(os.getenv("VJ")))
+        in interaction.user.roles
     ):
         await interaction.response.send_message(
             embed=Embed(
@@ -350,7 +375,7 @@ async def tracker(interaction: Interaction) -> None:
     trackedChannels: List[Tuple[TextChannel, datetime, int]] = []
     channelCount = 0
     for category in list(
-            filter(lambda x: x.name == "🎨【 작가채널 】", interaction.guild.categories)
+        filter(lambda x: x.name == "🎨【 작가채널 】", interaction.guild.categories)
     ):
         for channel in category.channels:
             if not channel.name.endswith("작가"):
@@ -365,8 +390,8 @@ async def tracker(interaction: Interaction) -> None:
                 lastSendTime: datetime = messages[0].created_at.replace(
                     tzinfo=timezone("Asia/Seoul")
                 )
-            if (lastSendTime + timedelta(days=7)) < datetime.now(
-                    tz=timezone("Asia/Seoul")
+            if (lastSendTime + timedelta(days=14)) < datetime.now(
+                tz=timezone("Asia/Seoul")
             ):
                 try:
                     trackedChannels.append(
@@ -377,9 +402,11 @@ async def tracker(interaction: Interaction) -> None:
                         (
                             channel,
                             lastSendTime,
-                            (await database["channel"].find_one(
-                                {"_id": str(channel.id)}
-                            ))["authors"][0],
+                            (
+                                await database["channel"].find_one(
+                                    {"_id": str(channel.id)}
+                                )
+                            )["authors"][0],
                         )
                     )
     inNeedOfActionChannel = "\n".join(
@@ -401,8 +428,8 @@ async def tracker(interaction: Interaction) -> None:
 @client.tree.command(name="새로고침", description="( VJ ONLY ) 작가채널을 데이터베이스에 새로고침합니다.")
 async def refresh(interaction: Interaction) -> None:
     if not (
-            utils.get(interaction.guild.roles, id=int(os.getenv("VJ")))
-            in interaction.user.roles
+        utils.get(interaction.guild.roles, id=int(os.getenv("VJ")))
+        in interaction.user.roles
     ):
         await interaction.response.send_message(
             embed=Embed(
@@ -416,13 +443,13 @@ async def refresh(interaction: Interaction) -> None:
     await interaction.response.defer()
     abnormalChannels: List[TextChannel] = []
     for category in list(
-            filter(lambda x: x.name == "🎨【 작가채널 】", interaction.guild.categories)
+        filter(lambda x: x.name == "🎨【 작가채널 】", interaction.guild.categories)
     ):
         for channel in category.channels:
             if str(channel.topic) == "":
                 if (
-                        await database["channel"].find_one({"channel": str(channel.id)})
-                        is None
+                    await database["channel"].find_one({"channel": str(channel.id)})
+                    is None
                 ):
                     if channel.name.endswith("작가"):
                         abnormalChannels.append(channel)
@@ -443,7 +470,7 @@ async def refresh(interaction: Interaction) -> None:
             embed=Embed(
                 title="작가채널 새로고침",
                 description=f"정상적으로 작가채널을 새로고침 하였습니다.\n하지만, **{len(abnormalChannels)}** 개의 채널이\n"
-                            f"비정상적으로 작동하고 있습니다.\n\n{', '.join([channel.mention for channel in abnormalChannels])}",
+                f"비정상적으로 작동하고 있습니다.\n\n{', '.join([channel.mention for channel in abnormalChannels])}",
                 color=Color.red(),
             )
         )
