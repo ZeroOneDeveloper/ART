@@ -119,7 +119,7 @@ async def on_member_join(member: Member):
 @client.event
 async def on_member_remove(member: Member):
     if member.guild.id == int(os.getenv("GUILD")):
-        await (client.get_channel(int(os.getenv("WELCOME_CHANNEL")))).send(
+        await (client.get_channel(int(os.getenv("BYE_CHANNEL")))).send(
             content=f'{member.mention}\n{str(member)}'
         )
         await (client.get_channel(int(os.getenv("USER_COUNT_CHANNEL")))).edit(
