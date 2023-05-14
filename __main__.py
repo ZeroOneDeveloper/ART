@@ -109,10 +109,10 @@ async def on_member_join(member: Member):
 역할 지급에 문제가 있다면 __**@ PD**__ 나 __**@ VJ**__ 언급하면 도와드리겠습니다😊
 그럼 많은 활동 부탁드려요!
         """
-        await (client.get_channel(int(os.getenv("WELCOME_CHANNEL_ID")))).send(
+        await client.get_channel(int(os.getenv("WELCOME_CHANNEL_ID"))).send(
             content=content
         )
-        await (client.get_channel(int(os.getenv("USER_COUNT_CHANNEL_ID")))).edit(
+        await client.get_channel(int(os.getenv("USER_COUNT_CHANNEL_ID"))).edit(
             name=f"전체-멤버-{member.guild.member_count}"
         )
 
@@ -120,10 +120,10 @@ async def on_member_join(member: Member):
 @client.event
 async def on_member_remove(member: Member):
     if member.guild.id == int(os.getenv("GUILD_ID")):
-        await (client.get_channel(int(os.getenv("BYE_CHANNEL_ID")))).send(
-            content=f'{member.mention}\n{str(member)}'
+        await client.get_channel(int(os.getenv("BYE_CHANNEL_ID"))).send(
+            content=f"{member.mention}\n{str(member)}"
         )
-        await (client.get_channel(int(os.getenv("USER_COUNT_CHANNEL_ID")))).edit(
+        await client.get_channel(int(os.getenv("USER_COUNT_CHANNEL_ID"))).edit(
             name=f"전체-멤버-{member.guild.member_count}"
         )
 
@@ -138,7 +138,9 @@ async def on_raw_reaction_add(payload: RawReactionActionEvent):
             "🖼️": int(os.getenv("CO_WRITER_ID")),
         }
         await client.get_guild(payload.guild_id).get_member(payload.user_id).add_roles(
-            utils.get(client.get_guild(payload.guild_id).roles, id=roles[payload.emoji.name])
+            utils.get(
+                client.get_guild(payload.guild_id).roles, id=roles[payload.emoji.name]
+            )
         )
 
 
@@ -233,7 +235,8 @@ async def writerApply(interaction: Interaction, channelName: str):
             writerChannel: TextChannel = await interaction.guild.create_text_channel(
                 name=f"{channelName}작가",
                 category=utils.get(
-                    interaction.guild.categories, id=int(os.getenv("WRITER_CATEGORY_ID"))
+                    interaction.guild.categories,
+                    id=int(os.getenv("WRITER_CATEGORY_ID")),
                 ),
                 overwrites=overwrites,
             )
@@ -327,7 +330,7 @@ async def sendDm(interaction: Interaction, user: Member, *, content: str):
             title="📨 DM",
             description=sendMessage,
             color=interaction.user.color,
-        ).set_footer(text='DM으로 답장하시면 관리자에게 전달됩니다.'),
+        ).set_footer(text="DM으로 답장하시면 관리자에게 전달됩니다."),
     )
     await interaction.response.send_message(
         embed=Embed(
