@@ -58,6 +58,7 @@ async def on_member_join(member: Member):
         utils.get(member.guild.roles, id=int(os.getenv("VIEWER"))),
     )
 
+
 cache: Dict[str, float] = dict()
 
 
@@ -81,18 +82,46 @@ async def on_message(message: Message):
             cache[str(message.author.id)] = time.time()
         await message.channel.send(
             embed=Embed(
-                title='✅ Success',
-                description='정상적으로 문의사항이 전송 되었으며,\n해당 문의사항에 욕설 및 비속어 등이 포함될 경우,\n불이익이 적용될 수 있습니다.',
-                color=Color.green()
+                title="✅ Success",
+                description="정상적으로 문의사항이 전송 되었으며,\n해당 문의사항에 욕설 및 비속어 등이 포함될 경우,\n불이익이 적용될 수 있습니다.",
+                color=Color.green(),
             )
         )
         await client.get_channel(int(os.getenv("CONTACT_CHANNEL"))).send(
             embed=Embed(
-                title=f'📣 {str(message.author)} ({message.author.id})',
-                description=f'**{message.content}**',
-                color=Color.green()
+                title=f"📣 {str(message.author)} ({message.author.id})",
+                description=f"**{message.content}**",
+                color=Color.green(),
             ),
-            files=[await attachment.to_file() for attachment in message.attachments]
+            files=[await attachment.to_file() for attachment in message.attachments],
+        )
+
+
+@client.event
+async def on_member_join(member: Member):
+    if member.guild.id == int(os.getenv("GUILD")):
+        content = f"""
+어서오세요 {member.mention}님, ART 서버에 오신 것을 환영합니다!
+저희 서버는 __**그림러들을 위한 서버**__이며,  __**커미션 / 리퀘스트 / 그림**__등을 올리거나 구경할 수 있습니다!
+
+<#704031848170520668> 읽어주시고 메세지 밑 __**반응**__ 눌러주시면 곧바로 역할이 지급됩니다!
+역할 지급에 문제가 있다면 __**@ PD**__ 나 __**@ VJ**__ 언급하면 도와드리겠습니다😊
+그럼 많은 활동 부탁드려요!
+        """
+        await (client.get_channel(int(os.getenv("WELCOME_CHANNEL")))).send(
+            content=content
+        )
+
+
+@client.event
+async def on_member_remove(member: Member):
+    if member.guild.id == int(os.getenv("GUILD")):
+        await (client.get_channel(int(os.getenv("WELCOME_CHANNEL")))).send(
+            embed=Embed(
+                title="👋 Bye",
+                description=f"{member.mention} ({str(member)}) 님이 나가셨습니다.",
+                color=Color.red(),
+            )
         )
 
 
@@ -259,6 +288,37 @@ async def writerApply(interaction: Interaction, channelName: str):
 
         await asyncio.sleep(1)
         view.timeout -= 1
+
+
+@client.tree.command(name="dm", description="( VJ ONLY ) 사용자에게 DM을 보냅니다.")
+@app_commands.describe(user="DM을 보낼 사용자를 선택합니다.", content="전송할 내용을 입력합니다.")
+@app_commands.rename(user="사용자", content="내용")
+async def sendDm(interaction: Interaction, user: Member, *, content: str):
+    if not utils.get(interaction.user.roles, id=int(os.getenv("VJ"))):
+        await interaction.response.send_message(
+            embed=Embed(
+                title="⚠️ Warning",
+                description="권한이 없습니다.",
+                color=Color.red(),
+            ),
+            ephemeral=True,
+        )
+        return
+    sendMessage = content.replace("  ", "\n")
+    await user.send(
+        embed=Embed(
+            title="📨 DM",
+            description=sendMessage,
+            color=interaction.user.color,
+        ).set_footer(text='DM으로 답장하시면 관리자에게 전달됩니다.'),
+    )
+    await interaction.response.send_message(
+        embed=Embed(
+            title="✅ Success",
+            description="정상적으로 DM을 보냈습니다.",
+            color=Color.green(),
+        ),
+    )
 
 
 @client.tree.command(name="경고", description="( VJ ONLY ) 경고를 부여합니다.")
