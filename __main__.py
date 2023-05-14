@@ -135,6 +135,14 @@ async def writerApply(interaction: Interaction, channelName: str):
                     add_reactions=True,
                     view_channel=True,
                 ),
+                utils.get(
+                    interaction.guild.roles, id=int(os.getenv("WRITER"))
+                ): PermissionOverwrite(
+                    read_messages=True,
+                    send_messages=True,
+                    add_reactions=True,
+                    view_channel=True,
+                ),
             }
 
             writerChannel: TextChannel = await interaction.guild.create_text_channel(
