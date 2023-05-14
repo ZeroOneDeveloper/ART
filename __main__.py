@@ -40,7 +40,7 @@ class MyClient(Client):
         self.tree = app_commands.CommandTree(self)
 
     async def setup_hook(self):
-        GUILD = Object(id=int(os.getenv("GUILD")))
+        GUILD = Object(id=int(os.getenv("GUILD_ID")))
         self.tree.copy_global_to(guild=GUILD)
         await self.tree.sync(guild=GUILD)
 
@@ -56,7 +56,7 @@ async def on_ready():
 @client.event
 async def on_member_join(member: Member):
     await member.add_roles(
-        utils.get(member.guild.roles, id=int(os.getenv("VIEWER"))),
+        utils.get(member.guild.roles, id=int(os.getenv("VIEWER_ID"))),
     )
 
 
@@ -88,7 +88,7 @@ async def on_message(message: Message):
                 color=Color.green(),
             )
         )
-        await client.get_channel(int(os.getenv("CONTACT_CHANNEL"))).send(
+        await client.get_channel(int(os.getenv("CONTACT_CHANNEL_ID"))).send(
             embed=Embed(
                 title=f"📣 {str(message.author)} ({message.author.id})",
                 description=f"**{message.content}**",
@@ -100,7 +100,7 @@ async def on_message(message: Message):
 
 @client.event
 async def on_member_join(member: Member):
-    if member.guild.id == int(os.getenv("GUILD")):
+    if member.guild.id == int(os.getenv("GUILD_ID")):
         content = f"""
 어서오세요 {member.mention}님, ART 서버에 오신 것을 환영합니다!
 저희 서버는 __**그림러들을 위한 서버**__이며,  __**커미션 / 리퀘스트 / 그림**__등을 올리거나 구경할 수 있습니다!
@@ -109,21 +109,21 @@ async def on_member_join(member: Member):
 역할 지급에 문제가 있다면 __**@ PD**__ 나 __**@ VJ**__ 언급하면 도와드리겠습니다😊
 그럼 많은 활동 부탁드려요!
         """
-        await (client.get_channel(int(os.getenv("WELCOME_CHANNEL")))).send(
+        await (client.get_channel(int(os.getenv("WELCOME_CHANNEL_ID")))).send(
             content=content
         )
-        await (client.get_channel(int(os.getenv("USER_COUNT_CHANNEL")))).edit(
+        await (client.get_channel(int(os.getenv("USER_COUNT_CHANNEL_ID")))).edit(
             name=f"전체-멤버-{member.guild.member_count}"
         )
 
 
 @client.event
 async def on_member_remove(member: Member):
-    if member.guild.id == int(os.getenv("GUILD")):
-        await (client.get_channel(int(os.getenv("BYE_CHANNEL")))).send(
+    if member.guild.id == int(os.getenv("GUILD_ID")):
+        await (client.get_channel(int(os.getenv("BYE_CHANNEL_ID")))).send(
             content=f'{member.mention}\n{str(member)}'
         )
-        await (client.get_channel(int(os.getenv("USER_COUNT_CHANNEL")))).edit(
+        await (client.get_channel(int(os.getenv("USER_COUNT_CHANNEL_ID")))).edit(
             name=f"전체-멤버-{member.guild.member_count}"
         )
 
@@ -147,7 +147,7 @@ async def on_interaction(interaction: Interaction):
     if interaction.type == InteractionType.component:
         if interaction.message.id == int(os.getenv("PUBLIC_MESSAGE_ID")):
             if (
-                utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER")))
+                utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER_ID")))
                 in interaction.user.roles
             ):
                 await interaction.response.send_message(
@@ -160,7 +160,7 @@ async def on_interaction(interaction: Interaction):
                 )
                 return
             await interaction.user.add_roles(
-                utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER"))),
+                utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER_ID"))),
             )
             await interaction.response.send_message(
                 embed=Embed(
@@ -213,7 +213,7 @@ async def writerApply(interaction: Interaction, channelName: str):
                     view_channel=True,
                 ),
                 utils.get(
-                    interaction.guild.roles, id=int(os.getenv("VIEWER"))
+                    interaction.guild.roles, id=int(os.getenv("VIEWER_ID"))
                 ): PermissionOverwrite(
                     read_messages=True,
                     send_messages=False,
@@ -221,7 +221,7 @@ async def writerApply(interaction: Interaction, channelName: str):
                     view_channel=True,
                 ),
                 utils.get(
-                    interaction.guild.roles, id=int(os.getenv("WRITER"))
+                    interaction.guild.roles, id=int(os.getenv("WRITER_ID"))
                 ): PermissionOverwrite(
                     read_messages=True,
                     send_messages=True,
@@ -233,7 +233,7 @@ async def writerApply(interaction: Interaction, channelName: str):
             writerChannel: TextChannel = await interaction.guild.create_text_channel(
                 name=f"{channelName}작가",
                 category=utils.get(
-                    interaction.guild.categories, id=int(os.getenv("WRITER_CATEGORY"))
+                    interaction.guild.categories, id=int(os.getenv("WRITER_CATEGORY_ID"))
                 ),
                 overwrites=overwrites,
             )
@@ -249,10 +249,10 @@ async def writerApply(interaction: Interaction, channelName: str):
             )
 
             await interaction.user.add_roles(
-                utils.get(interaction.guild.roles, id=int(os.getenv("WRITER"))),
+                utils.get(interaction.guild.roles, id=int(os.getenv("WRITER_ID"))),
             )
             await interaction.user.remove_roles(
-                utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER"))),
+                utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER_ID"))),
             )
 
             await _interaction.response.send_message(
@@ -311,7 +311,7 @@ async def writerApply(interaction: Interaction, channelName: str):
 @app_commands.describe(user="DM을 보낼 사용자를 선택합니다.", content="전송할 내용을 입력합니다.")
 @app_commands.rename(user="사용자", content="내용")
 async def sendDm(interaction: Interaction, user: Member, *, content: str):
-    if not utils.get(interaction.user.roles, id=int(os.getenv("VJ"))):
+    if not utils.get(interaction.user.roles, id=int(os.getenv("VJ_ID"))):
         await interaction.response.send_message(
             embed=Embed(
                 title="⚠️ Warning",
@@ -342,7 +342,7 @@ async def sendDm(interaction: Interaction, user: Member, *, content: str):
 @app_commands.describe(channel="경고를 부여할 채널을 선택합니다.")
 @app_commands.rename(channel="작가채널")
 async def warn(interaction: Interaction, channel: TextChannel):
-    if not utils.get(interaction.user.roles, id=int(os.getenv("VJ"))):
+    if not utils.get(interaction.user.roles, id=int(os.getenv("VJ_ID"))):
         await interaction.response.send_message(
             embed=Embed(
                 title="⚠️ Warning",
@@ -376,7 +376,7 @@ async def warn(interaction: Interaction, channel: TextChannel):
 @app_commands.describe(channel="삭제할 채널을 선택합니다.")
 @app_commands.rename(channel="작가채널")
 async def deleteWriterChannel(interaction: Interaction, channel: TextChannel):
-    if not utils.get(interaction.user.roles, id=int(os.getenv("VJ"))):
+    if not utils.get(interaction.user.roles, id=int(os.getenv("VJ_ID"))):
         await interaction.response.send_message(
             embed=Embed(
                 title="⚠️ Warning",
@@ -446,7 +446,7 @@ async def deleteWriterChannel(interaction: Interaction, channel: TextChannel):
                 interaction.guild.members, id=int(findData["authors"][0])
             )
             for role in [
-                int(os.getenv("WRITER")),
+                int(os.getenv("WRITER_ID")),
                 982907252103086191,
                 982907265101201408,
                 982907268389535745,
@@ -455,7 +455,7 @@ async def deleteWriterChannel(interaction: Interaction, channel: TextChannel):
                     utils.get(interaction.guild.roles, id=int(role))
                 )
             await member.add_roles(
-                utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER")))
+                utils.get(interaction.guild.roles, id=int(os.getenv("VIEWER_ID")))
             )
             await interaction.edit_original_response(
                 embed=Embed(
@@ -483,13 +483,13 @@ async def deleteWriterChannel(interaction: Interaction, channel: TextChannel):
 )
 async def tracker(interaction: Interaction) -> None:
     if not (
-        utils.get(interaction.guild.roles, id=int(os.getenv("VJ")))
+        utils.get(interaction.guild.roles, id=int(os.getenv("VJ_ID")))
         in interaction.user.roles
     ):
         await interaction.response.send_message(
             embed=Embed(
                 title="⚠️ Warning",
-                description=f'이 명령어는 <@&{os.getenv("VJ")}>만 사용할 수 있습니다.',
+                description=f'이 명령어는 <@&{os.getenv("VJ_ID")}>만 사용할 수 있습니다.',
                 color=Color.red(),
             ),
             ephemeral=True,
@@ -552,13 +552,13 @@ async def tracker(interaction: Interaction) -> None:
 @client.tree.command(name="새로고침", description="( VJ ONLY ) 작가채널을 데이터베이스에 새로고침합니다.")
 async def refresh(interaction: Interaction) -> None:
     if not (
-        utils.get(interaction.guild.roles, id=int(os.getenv("VJ")))
+        utils.get(interaction.guild.roles, id=int(os.getenv("VJ_ID")))
         in interaction.user.roles
     ):
         await interaction.response.send_message(
             embed=Embed(
                 title="⚠️ Warning",
-                description=f'이 명령어는 <@&{os.getenv("VJ")}>만 사용할 수 있습니다.',
+                description=f'이 명령어는 <@&{os.getenv("VJ_ID")}>만 사용할 수 있습니다.',
                 color=Color.red(),
             ),
             ephemeral=True,
