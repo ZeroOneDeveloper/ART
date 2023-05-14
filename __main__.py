@@ -1,6 +1,5 @@
 from discord import (
     ui,
-    User,
     utils,
     Color,
     Embed,
@@ -8,6 +7,8 @@ from discord import (
     Object,
     Member,
     Intents,
+    Message,
+    DMChannel,
     TextChannel,
     ButtonStyle,
     Interaction,
@@ -17,10 +18,11 @@ from discord import (
 )
 
 import os
+import time
 import asyncio
 from pytz import timezone
 from dotenv import load_dotenv
-from typing import List, Tuple, Union
+from typing import List, Tuple, Dict
 from datetime import datetime, timedelta
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -55,6 +57,43 @@ async def on_member_join(member: Member):
     await member.add_roles(
         utils.get(member.guild.roles, id=int(os.getenv("VIEWER"))),
     )
+
+cache: Dict[str, float] = dict()
+
+
+@client.event
+async def on_message(message: Message):
+    if message.author.bot:
+        return
+    if isinstance(message.channel, DMChannel):
+        if cache.get(str(message.author.id)) is None:
+            cache[str(message.author.id)] = time.time()
+        else:
+            if time.time() - cache[str(message.author.id)] < 300:
+                await message.channel.send(
+                    embed=Embed(
+                        title="⚠️ Warning",
+                        description="5분에 한번씩만 문의사항을 보낼 수 있습니다.",
+                        color=Color.red(),
+                    )
+                )
+                return
+            cache[str(message.author.id)] = time.time()
+        await message.channel.send(
+            embed=Embed(
+                title='✅ Success',
+                description='정상적으로 문의사항이 전송 되었으며,\n해당 문의사항에 욕설 및 비속어 등이 포함될 경우,\n불이익이 적용될 수 있습니다.',
+                color=Color.green()
+            )
+        )
+        await client.get_channel(int(os.getenv("CONTACT_CHANNEL"))).send(
+            embed=Embed(
+                title=f'📣 {str(message.author)} ({message.author.id})',
+                description=f'**{message.content}**',
+                color=Color.green()
+            ),
+            files=[await attachment.to_file() for attachment in message.attachments]
+        )
 
 
 @client.event
