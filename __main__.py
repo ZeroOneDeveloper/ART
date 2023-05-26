@@ -226,7 +226,7 @@ async def writerApply(interaction: Interaction, channelName: str):
                     interaction.guild.roles, id=int(os.getenv("WRITER_ID"))
                 ): PermissionOverwrite(
                     read_messages=True,
-                    send_messages=True,
+                    send_messages=False,
                     add_reactions=True,
                     view_channel=True,
                 ),
