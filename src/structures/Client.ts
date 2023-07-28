@@ -1,4 +1,3 @@
-import { config } from '../config'
 import {
   CommandClient,
   Extension,
@@ -26,9 +25,11 @@ class DevModule extends Extension {
   }
 }
 
-export class CustomizedCommandClient extends CommandClient {
+export class ARTClient extends CommandClient {
   async setup() {
-    await this.enableApplicationCommandsExtension({ guilds: config.guilds })
+    await this.enableApplicationCommandsExtension({
+      guilds: [process.env.GUILD!],
+    })
     await this.registry.registerModule(new DevModule())
 
     await this.registry.loadAllModulesInDirectory(
