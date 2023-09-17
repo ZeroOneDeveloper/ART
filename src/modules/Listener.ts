@@ -1,11 +1,14 @@
 import { Extension, listener } from "@pikokr/command.ts";
 import { ActivityType, ChannelType, TextChannel } from "discord.js";
 
+import mongoose from "mongoose";
+
 class Listener extends Extension {
   @listener({ event: "ready" })
   async ready() {
-    this.logger.info(`Logged in as ${this.client.user?.tag}`);
     await this.commandClient.fetchOwners();
+    await mongoose.connect(process.env.MONGODB_URI!);
+    this.logger.info(`Logged in as ${this.client.user?.tag}`);
     this.client.user?.setPresence({
       activities: [
         {

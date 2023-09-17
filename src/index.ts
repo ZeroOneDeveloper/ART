@@ -1,20 +1,20 @@
-import { ARTClient } from './structures'
-import { Client } from 'discord.js'
+import { ARTClient } from "./structures";
+import { Client } from "discord.js";
 
-require('dotenv').config()
+require("dotenv").config();
 
 const client = new Client({
-  intents: ['Guilds', 'DirectMessages'],
-})
+  intents: ["Guilds", "DirectMessages"],
+});
 
-const cts = new ARTClient(client)
+const cts = new ARTClient(client);
 
 const start = async () => {
-  await cts.setup()
+  await cts.setup();
 
-  await client.login(process.env.TOKEN)
+  await client.login(process.env.TOKEN);
 
-  await cts.getApplicationCommandsExtension()?.sync()
-}
+  await cts.getApplicationCommandsExtension()?.sync();
+};
 
-start().then()
+start().then();
