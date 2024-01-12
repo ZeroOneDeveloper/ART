@@ -98,6 +98,15 @@ class Listener extends Extension {
     });
   }
 
+  @listener({ event: "guildMemberRemove" })
+  async guildMemberRemove(member: GuildMember) {
+    const BYE_CHANNEL = this.client.channels.cache.get("979041857109647401");
+    if (!BYE_CHANNEL) return;
+    await (BYE_CHANNEL as TextChannel).send({
+      content: `<@${member.id}>\n${member.user.username}`,
+    });
+  }
+
   @listener({ event: "interactionCreate" })
   async interactionCreate(interaction: Interaction) {
     if (
