@@ -2,16 +2,16 @@ import { Schema, model } from "mongoose";
 
 const ARTIST_SCHEMA = new Schema(
   {
-    name: {
+    artistId: {
       type: String,
-      required: true,
-    },
-    artistIds: {
-      type: Array<string>,
       required: true,
     },
     channelId: {
       type: String,
+      required: true,
+    },
+    punished: {
+      type: Array<string>,
       required: true,
     },
   },
@@ -20,4 +20,4 @@ const ARTIST_SCHEMA = new Schema(
   }
 );
 
-export const Artist = model("Artist", ARTIST_SCHEMA);
+export const Artist = model("artist", ARTIST_SCHEMA);

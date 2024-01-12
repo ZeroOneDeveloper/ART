@@ -8,10 +8,14 @@ import {
   ChatInputCommandInteraction,
   ApplicationCommandOptionType,
   CategoryChannel,
+  GuildMemberRoleManager,
+  TextChannel,
 } from "discord.js";
 import { Extension, applicationCommand, option } from "@pikokr/command.ts";
 
 import { Artist } from "../../Database/Schema";
+
+import data from "./Listener";
 
 class Commands extends Extension {
   @applicationCommand({
@@ -30,13 +34,7 @@ class Commands extends Extension {
     })
     name: string
   ) {
-    if (
-      await Artist.findOne({
-        artistIds: {
-          $in: [i.user.id],
-        },
-      })
-    ) {
+    if (await Artist.findOne({ artistId: i.user.id.toString() })) {
       return i.reply({
         embeds: [
           {
@@ -144,8 +142,9 @@ class Commands extends Extension {
         });
         const newArtist = new Artist({
           name: name,
-          artistIds: [i.user.id],
-          channelId: createdChannel.id,
+          artistId: i.user.id.toString(),
+          channelId: createdChannel.id.toString(),
+          punished: [],
         });
         await newArtist.save();
         await i.editReply({
@@ -172,6 +171,7 @@ class Commands extends Extension {
       }
       return;
     } catch (e) {
+      console.error(e);
       return await i.editReply({
         embeds: [
           {
@@ -183,6 +183,40 @@ class Commands extends Extension {
         components: [],
       });
     }
+  }
+
+  @applicationCommand({
+    type: ApplicationCommandType.ChatInput,
+    name: "경고",
+    description: "작가 채널을 경고합니다. ( VJ Only )",
+  })
+  async warn(
+    i: ChatInputCommandInteraction,
+    @option({
+      type: ApplicationCommandOptionType.Channel,
+      required: true,
+      name: "경고할 채널",
+      description: "경고할 채널을 선택해주세요.",
+    })
+    channel: TextChannel
+  ) {
+    if (
+      !(i.member!.roles as GuildMemberRoleManager).cache.get(
+        "704025422387740768"
+      )
+    ) {
+      return i.reply({
+        embeds: [
+          {
+            title: "경고 실패",
+            description: "VJ 권한이 없습니다.",
+            color: 0xff0000,
+          },
+        ],
+        ephemeral: true,
+      });
+    }
+    console.log(channel);
   }
 }
 

@@ -1,7 +1,9 @@
 import { ARTClient } from "./structures";
 import { Client } from "discord.js";
 
-require("dotenv").config();
+import { config } from "dotenv";
+
+config();
 
 const client = new Client({
   intents: ["Guilds", "DirectMessages"],

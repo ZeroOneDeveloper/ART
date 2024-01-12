@@ -1,7 +1,9 @@
+import { TextChannel } from "discord.js";
 import { Extension, listener } from "@pikokr/command.ts";
-import { ActivityType, ChannelType, TextChannel } from "discord.js";
 
 import mongoose from "mongoose";
+
+let data: string[] = [];
 
 class Listener extends Extension {
   @listener({ event: "ready" })
@@ -18,6 +20,7 @@ class Listener extends Extension {
       ],
     });
     const CHECK_CHANNELS = async () => {
+      const punishedChannels: string[] = [];
       const GUILD = this.client.guilds.cache.get(process.env.GUILD!);
       if (!GUILD) return;
       const CHANNELS = GUILD.channels.cache.filter(
@@ -35,7 +38,7 @@ class Listener extends Extension {
         if (!lastMessage) {
           const channelCreatedAt = (channel as TextChannel).createdAt as Date;
           punishmentTime.setDate(channelCreatedAt.getDate() + 14);
-          punishmentTime.setHours(channelCreatedAt.getHours());
+          punishmentTime.setHours(channelCreatedAt.getHours() + 9);
           punishmentTime.setMinutes(channelCreatedAt.getMinutes());
           punishmentTime.setSeconds(channelCreatedAt.getSeconds());
         } else {
@@ -51,9 +54,25 @@ class Listener extends Extension {
           }
         }
         if (new Date() > punishmentTime) {
-          console.log(channel.name, punishmentTime);
+          if (!punishedChannels.includes(channel.id.toString())) {
+            punishedChannels.push(channel.id.toString());
+          }
         }
       });
+      if (punishedChannels.sort() !== punishedChannels.sort()) {
+        await (
+          this.client.channels.cache.get("996824873009680425") as TextChannel
+        ).send({
+          embeds: [
+            {
+              title: "⚠️ 경고 조치 요망",
+              description: punishedChannels.map((x) => `<#${x}>`).join("\n"),
+              color: 0xff9900,
+            },
+          ],
+        });
+        data = punishedChannels;
+      }
     };
     await CHECK_CHANNELS();
     setInterval(CHECK_CHANNELS, 1000 * 60);
@@ -68,3 +87,5 @@ class Listener extends Extension {
 export const setup = async () => {
   return new Listener();
 };
+
+export default data;
