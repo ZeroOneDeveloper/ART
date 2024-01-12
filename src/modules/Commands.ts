@@ -185,39 +185,39 @@ class Commands extends Extension {
     }
   }
 
-  @applicationCommand({
-    type: ApplicationCommandType.ChatInput,
-    name: "경고",
-    description: "작가 채널을 경고합니다. ( VJ Only )",
-  })
-  async warn(
-    i: ChatInputCommandInteraction,
-    @option({
-      type: ApplicationCommandOptionType.Channel,
-      required: true,
-      name: "경고할 채널",
-      description: "경고할 채널을 선택해주세요.",
-    })
-    channel: TextChannel
-  ) {
-    if (
-      !(i.member!.roles as GuildMemberRoleManager).cache.get(
-        "704025422387740768"
-      )
-    ) {
-      return i.reply({
-        embeds: [
-          {
-            title: "경고 실패",
-            description: "VJ 권한이 없습니다.",
-            color: 0xff0000,
-          },
-        ],
-        ephemeral: true,
-      });
-    }
-    console.log(channel);
-  }
+  // @applicationCommand({
+  //   type: ApplicationCommandType.ChatInput,
+  //   name: "경고",
+  //   description: "작가 채널을 경고합니다. ( VJ Only )",
+  // })
+  // async warn(
+  //   i: ChatInputCommandInteraction,
+  //   @option({
+  //     type: ApplicationCommandOptionType.Channel,
+  //     required: true,
+  //     name: "경고할 채널",
+  //     description: "경고할 채널을 선택해주세요.",
+  //   })
+  //   channel: TextChannel
+  // ) {
+  //   if (
+  //     !(i.member!.roles as GuildMemberRoleManager).cache.get(
+  //       "704025422387740768"
+  //     )
+  //   ) {
+  //     return i.reply({
+  //       embeds: [
+  //         {
+  //           title: "경고 실패",
+  //           description: "VJ 권한이 없습니다.",
+  //           color: 0xff0000,
+  //         },
+  //       ],
+  //       ephemeral: true,
+  //     });
+  //   }
+  //   console.log(channel);
+  // }
 }
 
 export const setup = async () => {
