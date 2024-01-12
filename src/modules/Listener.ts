@@ -1,4 +1,4 @@
-import { TextChannel } from "discord.js";
+import { GuildMember, TextChannel } from "discord.js";
 import { Extension, listener } from "@pikokr/command.ts";
 
 import mongoose from "mongoose";
@@ -81,6 +81,16 @@ class Listener extends Extension {
   @listener({ event: "applicationCommandInvokeError", emitter: "cts" })
   async errorHandler(err: Error) {
     this.logger.error(err);
+  }
+
+  @listener({ event: "guildMemberAdd" })
+  async guildMemberAdd(member: GuildMember) {
+    const WELCOME_CHANNEL =
+      this.client.channels.cache.get("979041309610377246");
+    if (!WELCOME_CHANNEL) return;
+    await (WELCOME_CHANNEL as TextChannel).send({
+      content: `어서오세요 <@${member.id}>님, ART 서버에 오신 것을 환영합니다!\n저희 서버는 **__그림러들을 위한 서버__**이며,  **__커미션 / 리퀘스트 / 그림__**등을 올리거나 구경할 수 있습니다!\n\n<#704031848170520668> 읽어주시고 메세지 밑 반응 눌러주시면 곧바로 역할이 지급됩니다!\n역할 지급에 문제가 있다면 **__@ PD__** 나 **__@ VJ__** 언급하면 도와드리겠습니다😊\n그럼 많은 활동 부탁드려요!`,
+    });
   }
 }
 
