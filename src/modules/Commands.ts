@@ -10,6 +10,8 @@ import {
   CategoryChannel,
   GuildMemberRoleManager,
   TextChannel,
+  RoleManager,
+  Role,
 } from "discord.js";
 import { Extension, applicationCommand, option } from "@pikokr/command.ts";
 
@@ -140,6 +142,9 @@ class Commands extends Extension {
             },
           ],
         });
+        await (i.member!.roles as GuildMemberRoleManager).add(
+          ART_GUILD.roles.cache.get("704025699274719275") as Role
+        );
         const newArtist = new Artist({
           name: name,
           artistId: i.user.id.toString(),
