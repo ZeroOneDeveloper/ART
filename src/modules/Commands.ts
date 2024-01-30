@@ -145,6 +145,9 @@ class Commands extends Extension {
         await (i.member!.roles as GuildMemberRoleManager).add(
           ART_GUILD.roles.cache.get("704025699274719275") as Role
         );
+        await (i.member!.roles as GuildMemberRoleManager).remove(
+          ART_GUILD.roles.cache.get("704025014113927250") as Role
+        );
         const newArtist = new Artist({
           name: name,
           artistId: i.user.id.toString(),
