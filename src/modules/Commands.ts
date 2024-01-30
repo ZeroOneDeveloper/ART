@@ -245,7 +245,9 @@ class Commands extends Extension {
         embeds: [
           {
             title: "⚠️ 경고",
-            description: "해당 작가는 이미 경고를 3번 누적되었습니다.",
+            description: `해당 작가는 이미 경고를 3번 누적되었습니다.\n\`\`\`${channelData
+              .get("punished")
+              .join("\n")}\`\`\``,
             color: 0xff0000,
           },
         ],
