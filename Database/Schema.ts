@@ -20,4 +20,4 @@ const ARTIST_SCHEMA = new Schema(
   }
 );
 
-export const Artist = model("artist", ARTIST_SCHEMA);
+export const Artist = model("artists", ARTIST_SCHEMA);

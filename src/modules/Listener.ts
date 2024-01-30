@@ -9,8 +9,6 @@ import { Extension, listener } from "@pikokr/command.ts";
 
 import mongoose from "mongoose";
 
-let data: string[] = [];
-
 class Listener extends Extension {
   @listener({ event: "ready" })
   async ready() {
@@ -138,5 +136,3 @@ class Listener extends Extension {
 export const setup = async () => {
   return new Listener();
 };
-
-export default data;
