@@ -8,6 +8,7 @@ import {
   ApplicationCommandType,
   ChatInputCommandInteraction,
 } from "discord.js";
+
 import path from "path";
 
 class DevModule extends Extension {

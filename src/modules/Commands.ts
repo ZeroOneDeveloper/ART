@@ -14,7 +14,7 @@ import {
 } from "discord.js";
 import { Extension, applicationCommand, option } from "@pikokr/command.ts";
 
-import { Artist } from "../../Database/Schema";
+import { Artist } from "@/Database/Schema";
 
 class Commands extends Extension {
   @applicationCommand({

@@ -1,5 +1,4 @@
 import {
-  Embed,
   GuildMember,
   GuildMemberRoleManager,
   Interaction,
@@ -62,22 +61,28 @@ class Listener extends Extension {
           }
         })
       );
-      await (
-        GUILD.channels.cache.get("996824873009680425") as TextChannel
-      ).send({
-        embeds: [
-          {
-            title: "⚠️ 채널 처리 요청",
-            description: punishedChannels
-              .filter((x) => {
-                return x !== undefined;
-              })
-              .map((x) => `<#${x}>`)
-              .join("\n"),
-            color: 0xffa500,
-          },
-        ],
-      });
+      if (
+        punishedChannels.filter((x) => {
+          return x !== undefined;
+        }) !== []
+      ) {
+        await (
+          GUILD.channels.cache.get("996824873009680425") as TextChannel
+        ).send({
+          embeds: [
+            {
+              title: "⚠️ 채널 처리 요청",
+              description: punishedChannels
+                .filter((x) => {
+                  return x !== undefined;
+                })
+                .map((x) => `<#${x}>`)
+                .join("\n"),
+              color: 0xffa500,
+            },
+          ],
+        });
+      }
     };
     await CHECK_CHANNELS();
     setInterval(CHECK_CHANNELS, 1000 * 60 * 60 * 12);
