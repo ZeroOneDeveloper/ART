@@ -14,7 +14,7 @@ import {
 } from "discord.js";
 import { Extension, applicationCommand, option } from "@pikokr/command.ts";
 
-import { Artist } from "@/Database/Schema";
+import { Artist } from "@/database/Schema";
 
 class Commands extends Extension {
   @applicationCommand({
@@ -193,7 +193,7 @@ class Commands extends Extension {
   @applicationCommand({
     type: ApplicationCommandType.ChatInput,
     name: "경고",
-    description: "작가 채널을 경고합니다. ( VJ Only )",
+    description: "작가 채널을 경고합니다. ( VJ & PD Only )",
   })
   async warn(
     i: ChatInputCommandInteraction,
@@ -284,6 +284,71 @@ class Commands extends Extension {
         {
           title: "경고 성공",
           description: "해당 작가를 경고했습니다.",
+          color: 0x00ff00,
+        },
+      ],
+    });
+  }
+
+  @applicationCommand({
+    type: ApplicationCommandType.ChatInput,
+    name: "작가삭제",
+    description: "작가 채널을 삭제합니다. ( VJ & PD Only )",
+  })
+  async delete(
+    i: ChatInputCommandInteraction,
+    @option({
+      type: ApplicationCommandOptionType.Channel,
+      required: true,
+      name: "삭제_채널",
+      description: "삭제할 채널 아이디를 작성해주세요.",
+    })
+    channel: string
+  ) {
+    if (
+      !(i.member!.roles as GuildMemberRoleManager).cache.get(
+        "704025422387740768"
+      ) &&
+      !(i.member!.roles as GuildMemberRoleManager).cache.get(
+        "704025429203222528"
+      )
+    ) {
+      return i.reply({
+        embeds: [
+          {
+            title: "삭제 실패",
+            description: "VJ 이상 권한이 없습니다.",
+            color: 0xff0000,
+          },
+        ],
+        ephemeral: true,
+      });
+    }
+    const channelData = await Artist.findOne({
+      channelId: channel,
+    });
+    if (!channelData) {
+      return i.reply({
+        embeds: [
+          {
+            title: "삭제 실패",
+            description:
+              "해당 채널은 가입된 작가 채널이 아닙니다.\n개발자에게 문의해주세요.",
+            color: 0xff0000,
+          },
+        ],
+        ephemeral: true,
+      });
+    }
+    await Artist.deleteOne({
+      channelId: channel,
+    });
+    await (this.client.channels.cache.get(channel) as TextChannel).delete();
+    await i.reply({
+      embeds: [
+        {
+          title: "삭제 성공",
+          description: "해당 작가채널을 삭제했습니다.",
           color: 0x00ff00,
         },
       ],

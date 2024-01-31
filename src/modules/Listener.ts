@@ -8,6 +8,8 @@ import { Extension, listener } from "@pikokr/command.ts";
 
 import mongoose from "mongoose";
 
+import { Artist } from "@/database/Schema";
+
 class Listener extends Extension {
   @listener({ event: "ready" })
   async ready() {
@@ -50,14 +52,34 @@ class Listener extends Extension {
             punishmentTime.setHours(lastMessageCreatedAt.getHours());
             punishmentTime.setMinutes(lastMessageCreatedAt.getMinutes());
             punishmentTime.setSeconds(lastMessageCreatedAt.getSeconds());
-            if (lastMessage.author.id === this.client.user?.id) {
+            if (lastMessage.author.id !== this.client.user?.id) {
               punishmentTime.setDate(lastMessageCreatedAt.getDate() + 1);
+              if (new Date() > punishmentTime) {
+                return channel.id;
+              }
             } else {
               punishmentTime.setDate(lastMessageCreatedAt.getDate() + 14);
             }
           }
           if (new Date() > punishmentTime) {
-            return channel.id;
+            const channelData = await Artist.findOne({
+              channelId: channel.id,
+            });
+            if (!channelData) return undefined;
+            if (channelData.get("punished").length >= 3) {
+              return channel.id;
+            }
+            await (channel as TextChannel).send({
+              content: `<@${channelData.get("artistId")}>`,
+              embeds: [
+                {
+                  title: "⚠️ 경고",
+                  description:
+                    "장기간 미활동으로 24시간 후 채널 삭제합니다!\n그림을 올리시면 보존되니 참고바랍니다!\n`이 뒤로는 적어도 14일에 한번씩은 활동 부탁드려요!`",
+                  color: 0xff0000,
+                },
+              ],
+            });
           }
         })
       );
