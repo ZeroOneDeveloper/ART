@@ -8,7 +8,7 @@ import { Extension, listener } from "@pikokr/command.ts";
 
 import mongoose from "mongoose";
 
-import { Artist } from "@/database/Schema";
+import { Artist } from "../../database/Schema";
 
 class Listener extends Extension {
   @listener({ event: "ready" })
