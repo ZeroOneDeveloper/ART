@@ -66,10 +66,21 @@ class Listener extends Extension {
               channelId: channel.id,
             });
             if (!channelData) return undefined;
-            console.log(channelData.get("punished"));
             if (channelData.get("punished").length >= 3) {
               return channel.id;
             } else {
+              await Artist.updateOne(
+                {
+                  channelId: channel.id,
+                },
+                {
+                  $push: {
+                    punished: new Date().toLocaleString("en-US", {
+                      timeZone: "Asia/Seoul",
+                    }),
+                  },
+                }
+              );
               await (channel as TextChannel).send({
                 content: `<@${channelData.get("artistId")}>`,
                 embeds: [
