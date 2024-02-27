@@ -22,8 +22,5 @@ def createLogger(name: str = "discord", level: int = INFO) -> Logger:
     return logger
 
 
-def getDatabase(
-    url: str = "mongodb://localhost:27017/",
-    name: str = "ART"
-):
+def getDatabase(url: str = "mongodb://localhost:27017/", name: str = "ART"):
     return AsyncIOMotorClient(url).get_database(name)
