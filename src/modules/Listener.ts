@@ -16,14 +16,6 @@ class Listener extends Extension {
     await this.commandClient.fetchOwners();
     await mongoose.connect(process.env.MONGODB_URI!);
     this.logger.info(`Logged in as ${this.client.user?.tag}`);
-    this.client.user?.setPresence({
-      activities: [
-        {
-          name: "문의사항은 DM으로 해주세요!",
-          type: 0,
-        },
-      ],
-    });
     const CHECK_CHANNELS = async () => {
       const GUILD = this.client.guilds.cache.get(process.env.GUILD!);
       if (!GUILD) return;
